@@ -10,8 +10,10 @@ import PostForm from "./components/PostForm";
 import MySelect from "./components/UI/select/MySelect";
 import PostFilter from "./components/PostFilter";
 import MyModal from "./components/UI/MyModal/MyModal";
+import Loader from "./components/UI/Loader/Loader";
 import {usePosts} from "./hooks/usePosts";
 import axios from "axios";
+import {useFetching} from "./hooks/useFetching";
 
 function App() {
     const [posts,setPosts] = useState([])
@@ -19,15 +21,17 @@ function App() {
     const [modal, setModal] = useState(false);
     const sortedAndSearhedPosts = usePosts(posts, filter.sort, filter.query);
 
+    const [fetchPosts, isPostsLoading, postError] = useFetching(async () => {
+        const response = await axios.get('https://jsonplaceholder.typicode.com/posts')
+        setPosts(response.data)
+    })
+
     const createPost = (newPost) => {
         setPosts([...posts, newPost])
         setModal(false)
     }
 
-    async function fetchPosts(){
-        const response = await axios.get('https://jsonplaceholder.typicode.com/posts')
-        setPosts(response.data)
-    }
+
 
     const removePost = (post) => {
        setPosts(posts.filter(p => p.id !== post.id))
@@ -48,7 +52,15 @@ function App() {
             filter={filter}
             setFilter={setFilter}
         />
-        <PostList remove={removePost} posts={sortedAndSearhedPosts} title='Посты про JS'/>
+        {
+            postError &&
+            <h1>Произошла ошибка ${postError}</h1>
+        }
+        {isPostsLoading
+            ? <div style={{display: 'flex', justifyContent: 'center', marginTop: 50}}><Loader/></div>
+            : <PostList remove={removePost} posts={sortedAndSearhedPosts} title='Посты про JS'/>
+        }
+
     </div>
   );
 }
